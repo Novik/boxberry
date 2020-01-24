@@ -9,11 +9,11 @@ module Spree
       end
 
       def compute_package(package)
-        290	# any non-zero
+        Boxberry::API::get_delivery_price( package.try(:order).try(:ship_address).try(:zipcode), package.weight )
       end
 
       def available?(package)
-        false
+        Boxberry::API::delivery_available?( package.try(:order).try(:ship_address).try(:zipcode) )
       rescue
         false
       end
