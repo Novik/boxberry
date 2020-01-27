@@ -6,12 +6,97 @@ module Boxberry
     extend self
 
     ENDPOINT = "https://api.boxberry.ru/json.php".freeze
+    
+    MIN_WEIGHT = 100
 
     mattr_accessor :token
     mattr_accessor :expires_in
     @@expires_in = 1.hour
 
     mattr_reader   :last_error
+
+    def setup
+      yield self
+    end
+
+    def last_error_message
+      @@last_error || ""
+    end
+
+    def delivery_available?(zip)
+      response = get('ZipCheck', { zip: zip }, ['ExpressDelivery'])
+      response.present? && (response['ExpressDelivery'].to_i == 1)
+    end
+
+    def get_delivery_price(zip,weight = MIN_WEIGHT)
+      get('DeliveryCosts', { weight: [weight,MIN_WEIGHT].max, zip: zip }, ['price']).try(:[],'price')
+    end
+
+    def get_delivery_period(zip,weight = MIN_WEIGHT)
+      get('DeliveryCosts', { weight: [weight,MIN_WEIGHT].max, zip: zip }, ['delivery_period']).try(:[],'delivery_period').try(:to_i)
+    end
+
+    def create_delivery( shipment )
+      ret = post('ParselCreate', get_parcel_parameters( shipment ), ['track'])
+      ret.present? ? ret['track'] : nil
+    end
+
+    protected
+
+    def get_payment_cost( shipment )
+      [shipment.order.total - shipment.order.payments.completed.sum(:amount),0].max # remove prepaid money
+    end
+
+    def has_free_shipping?( order )
+      promotions = Spree::Promotion.active.where( id: Spree::Promotion::Actions::FreeShipping.pluck(:promotion_id), path: nil )
+      promotions.detect { |promotion| promotion.eligible?(order) }.present?
+    end
+
+    def get_shipment_cost( shipment )
+      has_free_shipping?( shipment.order ) ? 0 : shipment.selected_shipping_rate.cost
+    end
+
+    def get_parcel_parameters( shipment )
+      order = shipment.order
+      address = order.ship_address
+      parsel = 
+      {
+        order_id: order.number,
+        price: order.total.to_i,
+        payment_sum: get_payment_cost( shipment ),
+        delivery_sum: get_shipment_cost( shipment ),
+        vid: 2, # courier
+        kurdost:
+        {
+          index: address.zipcode,
+          citi: "#{address.state_text}, #{address.city}",
+          addressp: address.address1
+        },
+        customer:
+        {
+          fio: address.full_name,
+          phone: address.phone.to_s.gsub(/[^0-9]/, ""),
+          email: order.email
+        },
+        items: [],
+        weights: {}
+      }
+
+      weight = 0
+      shipment.inventory_units.shipped.preload(:variant).each_with_index do |iu,index|
+        v = iu.variant
+        parsel[:items].push(
+        {
+          name: v.name,
+          nds: 0,
+          price: v.price.to_i,
+          quantity: 1
+        })
+        weight += v.weight.to_i
+      end
+      parsel[:weights][:weight] = [weight,MIN_WEIGHT].max
+      parsel
+    end
 
     def post( method, attrs = {}, answer_keys = [] )
       @@last_error = nil
@@ -51,22 +136,6 @@ module Boxberry
     rescue HTTParty::Error, StandardError => e
       @@last_error = e.message
       nil
-    end
-
-    def delivery_available?(zip)
-      response = self.get('ZipCheck', { zip: zip }, ['ExpressDelivery'])
-      response.present? && (response['ExpressDelivery'].to_i == 1)
-    end
-
-    def get_delivery_price(zip,weight = 100)
-      self.get('DeliveryCosts', { weight: [weight,100].max, zip: zip }, ['price']).try(:[],'price')
-    end
-
-    def get_delivery_period(zip,weight = 100)
-      self.get('DeliveryCosts', { weight: [weight,100].max, zip: zip }, ['delivery_period']).try(:[],'delivery_period').try(:to_i)
-    end
-
-    def create_delivery()
     end
 
   end

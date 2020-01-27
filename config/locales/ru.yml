@@ -1,3 +1,5 @@
-en:
+ru:
   spree:  
     shipping_boxberry: Boxberry
+    parsel_boxberry_create_success: 'Посылка Boxberry успешно создана.'
+    parsel_boxberry_create_fail: 'Ошибка создания посылки Boxberry. Попробуйте создать ее в ручном режиме. Причина: %{reason}'

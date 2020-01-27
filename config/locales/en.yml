@@ -1,3 +1,5 @@
 en:
   spree:  
     shipping_boxberry: Boxberry
+    parsel_boxberry_create_success: 'Boxberry parsel was created sucessfully.'
+    parsel_boxberry_create_fail: 'Error creation of Boxberry parsel. Reason: %{reason}'
