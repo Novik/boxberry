@@ -83,7 +83,7 @@ module Boxberry
       }
 
       weight = 0
-      shipment.inventory_units.shipped.preload(:variant).each_with_index do |iu,index|
+      shipment.inventory_units.preload(:variant).each_with_index do |iu,index|
         v = iu.variant
         parsel[:items].push(
         {
@@ -92,9 +92,9 @@ module Boxberry
           price: v.price.to_i,
           quantity: 1
         })
-        weight += v.weight.to_i
+        weight += v.weight
       end
-      parsel[:weights][:weight] = [weight,MIN_WEIGHT].max
+      parsel[:weights][:weight] = [(weight*1000).to_i,MIN_WEIGHT].max
       parsel
     end
 
