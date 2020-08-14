@@ -37,7 +37,7 @@ module Boxberry
     end
 
     def create_delivery( shipment )
-      ret = post('ParselCreate', get_parcel_parameters( shipment ), ['track'])
+      ret = post('ParselCreate', { sdata: get_parcel_parameters( shipment ).to_json }, ['track'])
       ret.present? ? ret['track'] : nil
     end
 
