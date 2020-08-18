@@ -56,6 +56,13 @@ module Boxberry
       has_free_shipping?( shipment.order ) ? 0 : shipment.selected_shipping_rate.cost
     end
 
+    def get_variant_dimensions( v )
+      dim = [ v.respond_to?(:delivery_x) ? v.delivery_x.to_f : v.width.to_f,
+        v.respond_to?(:delivery_y) ? v.delivery_y.to_f : v.height.to_f,
+        v.respond_to?(:delivery_z) ? v.delivery_z.to_f : v.depth.to_f ]
+      dim.sort! { |a, b| b <=> a }
+    end 
+
     def get_parcel_parameters( shipment )
       order = shipment.order
       address = order.ship_address
@@ -83,6 +90,7 @@ module Boxberry
       }
 
       weight = 0
+      parcel_dim = [ 0.0, 0.0, 0.0 ]
       shipment.inventory_units.preload(:variant).each_with_index do |iu,index|
         v = iu.variant
         parsel[:items].push(
@@ -93,8 +101,21 @@ module Boxberry
           quantity: 1
         })
         weight += v.weight
+        v_dim = get_variant_dimensions( v )
+        if v_dim.all? { |a| a > 0.0 }
+          parcel_dim[0] = [ parcel_dim[0], v_dim[0] ].max
+          parcel_dim[1] = [ parcel_dim[1], v_dim[1] ].max
+          parcel_dim[2] = parcel_dim[2] + v_dim[2]
+        else
+          parcel_dim = []
+        end
       end
       parsel[:weights][:weight] = [(weight*1000).to_i,MIN_WEIGHT].max
+      if parcel_dim.present? && parcel_dim.all? { |a| a > 0.0 }
+        parsel[:weights][:x] = parcel_dim[0]
+        parsel[:weights][:y] = parcel_dim[1]
+        parsel[:weights][:z] = parcel_dim[2]
+      end
       parsel
     end
 
