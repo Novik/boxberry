@@ -43,6 +43,10 @@ module Boxberry
 
     protected
 
+    def get_delivery_type( shipment )
+      shipment.shipping_method.boxberry? ? 2 : 3 # courier or "Почта России"
+    end
+
     def get_payment_cost( shipment )
       [shipment.order.total - shipment.order.payments.completed.sum(:amount),0].max # remove prepaid money
     end
@@ -72,7 +76,7 @@ module Boxberry
         price: order.total.to_i,
         payment_sum: get_payment_cost( shipment ),
         delivery_sum: get_shipment_cost( shipment ),
-        vid: 2, # courier
+        vid: get_delivery_type( shipment ),
         kurdost:
         {
           index: address.zipcode,

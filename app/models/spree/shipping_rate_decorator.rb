@@ -1,6 +1,7 @@
 Spree::ShippingRate.class_eval do
  
   delegate :boxberry?, to: :shipping_method
+  delegate :boxberry_supported?, to: :shipping_method
 
 #  def cost
 #    if shipping_method.try(:boxberry?) && shipment.present?
