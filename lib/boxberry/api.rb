@@ -73,7 +73,7 @@ module Boxberry
       parsel = 
       {
         order_id: order.number,
-        price: order.total.to_i,
+        price: order.total - get_shipment_cost( shipment ),
         payment_sum: get_payment_cost( shipment ),
         delivery_sum: get_shipment_cost( shipment ),
         vid: get_delivery_type( shipment ),
