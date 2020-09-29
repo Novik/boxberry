@@ -11,7 +11,7 @@ Spree::Api::ShipmentsController.class_eval do
           flash[:error] = Spree.t(:parsel_boxberry_create_fail, reason: ::Boxberry::API::last_error_message)
         end
       end
-#      @shipment.ship!
+      @shipment.ship!
     end
     respond_with(@shipment, default_template: :show)
   end
