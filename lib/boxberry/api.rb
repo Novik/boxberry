@@ -122,7 +122,7 @@ module Boxberry
       end
 
       if delivery_type == DELIVERY_TYPE_POSTMAN
-        parsel.merge!(DEFAULT_POSTMAN_OPTIONS)
+        parsel[:kurdost].merge!(DEFAULT_POSTMAN_OPTIONS)
       end
 
       parsel[:weights][:weight] = [(weight*1000).to_i,MIN_WEIGHT].max
@@ -131,7 +131,7 @@ module Boxberry
         parsel[:weights][:y] = parcel_dim[1]
         parsel[:weights][:z] = parcel_dim[2]
 
-        parsel[:packing_type] = 1 if parcel_dim.sum > 106
+        parsel[:kurdost][:packing_type] = 1 if parcel_dim.sum > 106
 
       end
       parsel
