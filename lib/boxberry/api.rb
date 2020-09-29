@@ -9,6 +9,11 @@ module Boxberry
     
     MIN_WEIGHT = 100
 
+    DELIVERY_TYPE_COURIER = 2
+    DELIVERY_TYPE_POSTMAN = 3
+
+    DEFAULT_POSTMAN_OPTIONS = { packing_type: 0, packing_strict: true }
+
     mattr_accessor :token
     mattr_accessor :expires_in
     @@expires_in = 1.hour
@@ -44,7 +49,7 @@ module Boxberry
     protected
 
     def get_delivery_type( shipment )
-      shipment.shipping_method.boxberry? ? 2 : 3 # courier or "Почта России"
+      shipment.shipping_method.boxberry? ? DELIVERY_TYPE_COURIER : DELIVERY_TYPE_POSTMAN # courier or "Почта России"
     end
 
     def get_payment_cost( shipment )
@@ -70,13 +75,14 @@ module Boxberry
     def get_parcel_parameters( shipment )
       order = shipment.order
       address = order.ship_address
+      delivery_type = get_delivery_type( shipment )
       parsel = 
       {
         order_id: order.number,
         price: order.total - get_shipment_cost( shipment ),
         payment_sum: get_payment_cost( shipment ),
         delivery_sum: get_shipment_cost( shipment ),
-        vid: get_delivery_type( shipment ),
+        vid: delivery_type,
         kurdost:
         {
           index: address.zipcode,
@@ -114,11 +120,19 @@ module Boxberry
           parcel_dim = []
         end
       end
+
+      if delivery_type == DELIVERY_TYPE_POSTMAN
+        parsel.merge!(DEFAULT_POSTMAN_OPTIONS)
+      end
+
       parsel[:weights][:weight] = [(weight*1000).to_i,MIN_WEIGHT].max
       if parcel_dim.present? && parcel_dim.all? { |a| a > 0.0 }
         parsel[:weights][:x] = parcel_dim[0]
         parsel[:weights][:y] = parcel_dim[1]
         parsel[:weights][:z] = parcel_dim[2]
+
+        parsel[:packing_type] = 1 if parcel_dim.sum > 106
+
       end
       parsel
     end
