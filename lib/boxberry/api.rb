@@ -12,7 +12,7 @@ module Boxberry
     DELIVERY_TYPE_COURIER = 2
     DELIVERY_TYPE_POSTMAN = 3
 
-    DEFAULT_POSTMAN_OPTIONS = { packing_type: 0, packing_strict: true }
+    DEFAULT_POSTMAN_OPTIONS = { packing_type: 1, packing_strict: 1 }
 
     mattr_accessor :token
     mattr_accessor :expires_in
@@ -131,7 +131,7 @@ module Boxberry
         parsel[:weights][:y] = parcel_dim[1]
         parsel[:weights][:z] = parcel_dim[2]
 
-        parsel[:kurdost][:packing_type] = 1 if parcel_dim.sum > 106
+        #parsel[:kurdost][:packing_type] = 1 if parcel_dim.sum > 106
 
       end
       parsel
